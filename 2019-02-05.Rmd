@@ -1,10 +1,13 @@
 ---
-title: 'Housing Price Index'
-author: 'Ryan Martin'
-date: '06/02/2019'
-output: html_document
+title: "Housing Price Index"
+author: "Ryan Martin"
+date: "06/02/2019"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
+##load libraries
 library(tidyverse)
 library(lubridate)
 library(RColorBrewer)
