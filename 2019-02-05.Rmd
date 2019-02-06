@@ -1,0 +1,73 @@
+---
+title: 'Housing Price Index'
+author: 'Ryan Martin'
+date: '06/02/2019'
+output: html_document
+---
+
+library(tidyverse)
+library(lubridate)
+library(RColorBrewer)
+
+##Read in data
+state_hpi <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-05/state_hpi.csv")
+
+##Collect data on regions of individual states
+state_regions <- data.frame(state.abb, state.division) %>%
+  mutate(state = state.abb) %>%
+  select(state.division, state)
+
+##Reformat table to have a date column
+state_index <- state_hpi %>%
+  unite(date, year:month, sep = " ") %>%
+  mutate(date = parse_date_time(date, "Y! m!*")) %>%
+  mutate(date = as.Date(date))
+
+##Determine mean price index per region of the US
+division_avg <- state_index %>%
+  left_join(state_regions, by = "state") %>%
+  group_by(date, state.division) %>%
+  summarise(mean_division = mean(price_index)) %>%
+  ungroup() %>%
+  mutate(state.division = fct_explicit_na(state.division, "DC"))
+
+##Extract US average
+us_avg_index <- state_index %>%
+  select(date, us_avg)
+
+##Plot
+p <- ggplot(state_index, aes(x = date, y = price_index)) +
+  geom_line(aes(group = state), alpha = 0.2, color = "grey") +
+  geom_line(data = us_avg_index, aes(x = date, y = us_avg), color = "red", size = 2) +
+  geom_line(data = division_avg, aes(x = date, y = mean_division, color = state.division)) +
+  ylim(0,400) +
+  labs(title = "Housing price index throughout the years",
+       subtitle = "What is going on with DC? \nRed bars indicate periods of recession and grey lines are individual states",
+       x = "Date", 
+       y = "House Price Index",
+       caption = "Data: Freddie Mac   Plot: @ryan4martin",
+       color = "Region") +
+  scale_color_brewer(palette = "Paired") +
+  theme_minimal() +
+  annotate("rect", xmin = as.Date("1980-01-01", "%Y-%m-%d"), 
+           xmax = as.Date("1980-07-01", "%Y-%m-%d"), ymin = 0, ymax = Inf, 
+           fill = "red", alpha = 0.2) +
+  annotate("rect", xmin = as.Date("1981-07-01", "%Y-%m-%d"), 
+           xmax = as.Date("1982-11-01", "%Y-%m-%d"), ymin = 0, ymax = Inf, 
+           fill = "red", alpha = 0.2) +
+  annotate("rect", xmin = as.Date("1990-07-01", "%Y-%m-%d"), 
+           xmax = as.Date("1991-03-01", "%Y-%m-%d"), ymin = 0, ymax = Inf, 
+           fill = "red", alpha = 0.2) +
+  annotate("rect", xmin = as.Date("2001-03-01", "%Y-%m-%d"), 
+           xmax = as.Date("2001-11-01", "%Y-%m-%d"), ymin = 0, ymax = Inf, 
+           fill = "red", alpha = 0.2) +
+  annotate("rect", xmin = as.Date("2007-12-01", "%Y-%m-%d"), 
+           xmax = as.Date("2009-06-01", "%Y-%m-%d"), ymin = 0, ymax = Inf, 
+           fill = "red", alpha = 0.2) +
+  annotate("text", x = as.Date("2008-10-01", "%Y-%m-%d"), y = 300, label = "Great \n Recession") +
+  annotate("text", x = as.Date("2021-01-01", "%Y-%m-%d"), y = 190, label = "US \n Average", color = "red")
+
+##Save plot
+ggsave("house_price_index.png", p, width = 10)
+
+
