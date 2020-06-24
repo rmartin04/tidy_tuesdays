@@ -126,5 +126,4 @@ for(i in 2:100){
 }
 
 # Save gif
-anim_save("filenamehere.gif", combined_gif)
-image_write(combined_gif, path="caribou_tracking.gif")
+anim_save("caribou_tracking.gif", combined_gif)
